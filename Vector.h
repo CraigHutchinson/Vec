@@ -325,18 +325,6 @@ VectorT<Data,Count,Tag> operator / ( const VectorT<Data,Count,Tag>& lhs, const V
     return ret;
 }
 
-/**
- * @remark Only 3D cross product implemented. 0, 1, 3, 7 technically valid (TBD)
- * @note Direct member access - Maximum debug performance
- */
-template <typename Data>
-VectorT<Data,3U,CartesianTag> cross( const VectorT<Data,3U,CartesianTag>& lhs, const VectorT<Data,3U,CartesianTag>& rhs )
-{
-    return VectorT<Data,3U,CartesianTag>( (lhs.y * rhs.z) - (lhs.z * rhs.y)
-                                        , (lhs.z * rhs.x) - (lhs.x * rhs.z)
-                                        , (lhs.x * rhs.y) - (lhs.y * rhs.x) ); 
-}
-
 template <typename Data, uint32_t Count, typename Tag>
 bool operator < ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
 {
@@ -349,6 +337,31 @@ bool operator < ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,T
             return false;
     }
     return false;
+}
+
+
+/**
+ * @remark Only 3D cross product implemented. 0, 1, 3, 7 technically valid (TBD)
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data>
+VectorT<Data,3U,CartesianTag> cross( const VectorT<Data,3U,CartesianTag>& lhs, const VectorT<Data,3U,CartesianTag>& rhs )
+{
+    return VectorT<Data,3U,CartesianTag>( (lhs.y * rhs.z) - (lhs.z * rhs.y)
+                                        , (lhs.z * rhs.x) - (lhs.x * rhs.z)
+                                        , (lhs.x * rhs.y) - (lhs.y * rhs.x) ); 
+}
+
+/**
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data, uint32_t Count, typename Tag>
+Data dot( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs  )
+{
+    Data product = lhs.vec[0U] * lhs.vec[0U]; ///< @todo We don't specialise for Count==0!
+    for ( size_t i = 1U; i < Count; ++i )
+        product += lhs.vec[i] * lhs.vec[i]; 
+    return product;		
 }
 
 typedef VectorT<float,1U,CartesianTag> Vector1f; ///< x
@@ -386,6 +399,7 @@ Vector3f test()
     v.vec[2] = v.size();
 
     bool test = v < v;
+    float t = dot(v,v);
 
     /// @note GCC 7.2 failes to optimise out the math at O3
     /// clang  oes optimise all code using constants
