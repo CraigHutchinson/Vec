@@ -1,12 +1,26 @@
+#include <stddef.h>
 #include <stdint.h>
-#include <array>
 
+/// @{ Common types giving direct data access via member variable names
 struct VectorTag; ///< vec[N]
-struct DynamicTag; ///< vec[1U..N]
-struct AllocatorTag; ///< ->vec[1U..N]
 struct CartesianTag; ///< x, [y, [z, [w]]]
 struct RgbTag; ///< r, g, b, [a]
 struct YuvTag; ///< y, [u, v]
+/// @}
+
+/// @{ Variable length vectors stack/allocator
+/** Dynamic size vector with fixed capacity at compile time
+*/
+struct DynamicTag; ///< vec[1U..N]
+
+/** Dynamic size vector with runtime allocated capacity
+ * @remark Uses small-buffer optimisations to minimise allocation
+ * @tparam  Count  Small-buffer capacity. When vector storage is less or 
+ *  equal no dynamic allocation is used and data is directly stored.
+ *   i.e. union{ Data* dynamic; Data smallBuffer[Count]; } 
+ */
+struct AllocatorTag; ///< ->vec[1U..N] (Custom allocator)
+/// @}
 
 /** Vector
  * @tparam  Data  Vector element data type
@@ -17,23 +31,39 @@ struct YuvTag; ///< y, [u, v]
 template <typename Data, uint32_t Count, typename Tag = CartesianTag >
 struct VectorT;
 
+//TODO: doc etc
+template <typename Data, typename Tag >
+struct detail;
+template <typename Data, uint32_t Count, typename Tag >
+struct fixedDetail;
+
 /** @} Default member */
 template <typename Data, uint32_t Count, typename Tag >
-struct VectorT : std::array<Data,Count>
+struct VectorT : fixedDetail<Data,Count,Tag>
 {
     typedef DynamicTag tag_type; ///< Custom tag interface
 
-#if 0 ///< C++03
     Data vec[Count];
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
     Data& operator[] ( const size_t index ) { return vec[index]; }
     const Data& operator[] ( const size_t index ) const { return vec[index]; }
-#endif
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[Count]; }
+    const Data* end() const { return &vec[Count]; }
+    const Data* cend() const { return &vec[Count]; }
+    /** @} End performance container functions/operators */
 };
 /** @} VectorTag */
 
 /** @} DynamicTag */
 template <typename Data, uint32_t Count>
-struct VectorT<Data,Count,DynamicTag>
+struct VectorT<Data,Count,DynamicTag> : detail<Data,DynamicTag>
 { 
     typedef Data value_type; ///< Interface for std container
     typedef DynamicTag tag_type; ///< Custom tag interface
@@ -49,13 +79,24 @@ struct VectorT<Data,Count,DynamicTag>
     constexpr VectorT( const uint_fast16_t size )  ///< constexpr for static_assert tests!
     : vec(), size_(size) {}
 
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[Count]; }
+    const Data* end() const { return &vec[Count]; }
+    const Data* cend() const { return &vec[Count]; }
+    /** @} End performance container functions/operators */
 private:
     const uint_fast16_t size_; ///< Current size
 };
 /** @} DynamicTag */
 
-template <typename Data, uint32_t Count, typename Tag >
-struct fixedDetail;
 
 /** @{ CartesianTag */
 template <typename Data>
@@ -65,6 +106,20 @@ struct VectorT<Data,1U,CartesianTag> : fixedDetail<Data,1U,CartesianTag>
     constexpr VectorT() : vec() {} ///< constexpr for static_assert tests!
     VectorT( const Data x ) 
     : x(x) {} 
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[1U]; }
+    const Data* end() const { return &vec[1U]; }
+    const Data* cend() const { return &vec[1U]; }
+    /** @} End performance container functions/operators */
 };
 
 template <typename Data>
@@ -74,6 +129,20 @@ struct VectorT<Data,2U,CartesianTag> : fixedDetail<Data,2U,CartesianTag>
     constexpr VectorT() : vec() {} ///< constexpr for static_assert tests!
     VectorT( const Data x, const Data y ) 
     : x(x), y(y) {} 
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[2U]; }
+    const Data* end() const { return &vec[2U]; }
+    const Data* cend() const { return &vec[2U]; }
+    /** @} End performance container functions/operators */
 };
 
 template <typename Data>
@@ -83,6 +152,20 @@ struct VectorT<Data,3U,CartesianTag> : fixedDetail<Data,3U,CartesianTag>
     constexpr VectorT() : vec() {} ///< constexpr for static_assert tests!
     VectorT( const Data x, const Data y, const Data z )
      : x(x), y(y), z(z) {} 
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[3U]; }
+    const Data* end() const { return &vec[3U]; }
+    const Data* cend() const { return &vec[3U]; }
+    /** @} End performance container functions/operators */
 };
 
 template <typename Data>
@@ -92,6 +175,20 @@ struct VectorT<Data,4U,CartesianTag> : fixedDetail<Data,4U,CartesianTag>
     constexpr VectorT() : vec() {} ///< constexpr for static_assert tests!
     VectorT( const Data x, const Data y, const Data z, const Data w ) 
     : x(x), y(y), z(z), w(w) {} 
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[4U]; }
+    const Data* end() const { return &vec[4U]; }
+    const Data* cend() const { return &vec[4U]; }
+    /** @} End performance container functions/operators */
 };
 /** @} CartesianTag */
 
@@ -103,6 +200,20 @@ struct VectorT<Data,3U,RgbTag> : fixedDetail<Data,3U,RgbTag>
     constexpr VectorT() {} ///< constexpr for static_assert tests!
     VectorT( const Data r, const Data g, const Data b ) 
     : r(r), g(g), b(b) {}  
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[3U]; }
+    const Data* end() const { return &vec[3U]; }
+    const Data* cend() const { return &vec[3U]; }
+    /** @} End performance container functions/operators */
 };
 
 template <typename Data>
@@ -112,6 +223,20 @@ struct VectorT<Data,4U,RgbTag> : fixedDetail<Data,4U,RgbTag>
     constexpr VectorT() {} ///< constexpr for static_assert tests!
     VectorT( const Data r, const Data g, const Data b, const Data a ) 
     : r(r), g(g), b(b), a(a) {} 
+
+    /** @{ Performance container functions/operator
+     * @remark Library functions may use .vec for zero cost array access as standard
+     * @note These functions are less costly than CRTP (Recursive-Template) under debug builds.
+     */
+    Data& operator[] ( const size_t index ) { return vec[index]; }
+    const Data& operator[] ( const size_t index ) const { return vec[index]; }
+    Data* begin() { return &vec[0U]; }
+    const Data* begin() const { return &vec[0U]; }
+    const Data* cbegin() const { return &vec[0U]; }
+    Data* end() { return &vec[4U]; }
+    const Data* end() const { return &vec[4U]; }
+    const Data* cend() const { return &vec[4U]; }
+    /** @} End performance container functions/operators */
 };
 /** @} RgbTag */
 
@@ -135,32 +260,35 @@ struct VectorT<Data,3U,YuvTag> : fixedDetail<Data,3U,YuvTag>
 };
 /** @} YuvTag */
 
+template <typename Data, typename Tag >
+struct detail
+{
+    typedef Data value_type; ///< Interface for std container
+    typedef CartesianTag tag_type; ///< Custom tag interface
+};
+
 template <typename Data, uint32_t Count, typename Tag >
-struct fixedDetail
+struct fixedDetail : detail<Data,Tag>
 {
     typedef VectorT<Data,Count,Tag> Vector;
     typedef Data value_type; ///< Interface for std container
     typedef CartesianTag tag_type; ///< Custom tag interface
-    static constexpr uint_fast16_t cCapacity = Count;
 
-    constexpr uint_fast16_t capacity() const { return cCapacity; }
-    constexpr uint_fast16_t size() const { return cCapacity; }
-    
-    /// @note CRTP performance needs check
-    // !Looks to not compile out until O3 :(
-    const value_type& __attribute((optimize("O3"))) operator[] ( const uint_fast16_t index ) const
-    { return static_cast<const Vector&>(*this).vec[index]; }
-
-    value_type& __attribute((optimize("O3"))) operator[] ( const uint_fast16_t index )
-    { return static_cast<Vector&>(*this).vec[index]; }
+    constexpr uint_fast16_t capacity() const { return Count; }
+    constexpr uint_fast16_t size() const { return Count; }   
 };
 
+/**
+ * @note Direct member access - Maximum debug performance
+ */
 template <typename Data, uint32_t Count, typename Tag>
 VectorT<Data,Count,Tag> operator + ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
 {
     VectorT<Data,Count,Tag> ret;
     for ( size_t i = 0U; i < Count; ++i )
+    {
         ret.vec[i] = lhs.vec[i] + rhs.vec[i];
+    }
     return ret;
 }
 
@@ -174,12 +302,13 @@ typedef VectorT<float,10U,DynamicTag> VectorX10f; ///< vec[1..10]
 typedef VectorT<float,3U,RgbTag> Rgb;
 typedef VectorT<float,3U,YuvTag> Yuv;
 
+#if 0
 static_assert( sizeof(Vector1f) == sizeof(float) * 1U, "Design error" );
 static_assert( sizeof(Vector2f) == sizeof(float) * 2U, "Design error" );
 static_assert( sizeof(Vector3f) == sizeof(float) * 3U, "Design error" );
 static_assert( sizeof(Vector10f) == sizeof(float) * 10U, "Design error" );
 static_assert( sizeof(VectorX10f) == sizeof(Vector10f) + sizeof(uint_fast16_t), "Design error" );
-
+#endif
 static_assert( Vector1f().size() == 1U, "Design error" );
 static_assert( Vector2f().size() == 2U, "Design error" );
 static_assert( Vector3f().size() == 3U, "Design error" );
@@ -187,14 +316,17 @@ static_assert( Vector10f().size() == 10U, "Design error" );
 static_assert( VectorX10f(1U).size() == 1U, "Design error" );
 static_assert( VectorX10f(5U).size() == 5U, "Design error" );
 
+
 // Type your code here, or load an example.
-Yuv test() 
+Vector3f test() 
 {
-    Yuv yuv(1,2,3);
-    yuv.y = 4;
-    yuv.u = 5;
-    yuv.v = 6;
+    Vector3f v;
+    v.x = 1;
+    v.vec[0] = 1; ///< Direct member access can be used for library functions
+    v[1] = 2; ///< Must user overloaded operator
+    v.z = 3;
+    v.vec[2] = v.size();
 
 
-    return yuv + Yuv(2,3,4);
+    return v + Vector3f(2,3,4);
 }
