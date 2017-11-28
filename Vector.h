@@ -325,6 +325,32 @@ VectorT<Data,Count,Tag> operator / ( const VectorT<Data,Count,Tag>& lhs, const V
     return ret;
 }
 
+/**
+ * @remark Only 3D cross product implemented. 0, 1, 3, 7 technically valid (TBD)
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data>
+VectorT<Data,3U,CartesianTag> cross( const VectorT<Data,3U,CartesianTag>& lhs, const VectorT<Data,3U,CartesianTag>& rhs )
+{
+    return VectorT<Data,3U,CartesianTag>( (lhs.y * rhs.z) - (lhs.z * rhs.y)
+                                        , (lhs.z * rhs.x) - (lhs.x * rhs.z)
+                                        , (lhs.x * rhs.y) - (lhs.y * rhs.x) ); 
+}
+
+template <typename Data, uint32_t Count, typename Tag>
+bool operator < ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
+{
+    ///TODO: not tested/verified/optimal?
+    for ( size_t i = 0U; i < Count; ++i )
+    {
+        if ( lhs[i] < rhs[i] )
+            return true;
+        if ( rhs[i] < lhs[i] )
+            return false;
+    }
+    return false;
+}
+
 typedef VectorT<float,1U,CartesianTag> Vector1f; ///< x
 typedef VectorT<float,2U,CartesianTag> Vector2f; ///< x, y
 typedef VectorT<float,3U,CartesianTag> Vector3f; ///< x, y, z
@@ -359,7 +385,9 @@ Vector3f test()
     v.z = 3;
     v.vec[2] = v.size();
 
+    bool test = v < v;
+
     /// @note GCC 7.2 failes to optimise out the math at O3
     /// clang  oes optimise all code using constants
-    return v + Vector3f(2,3,4) * Vector3f(4,5,6) - Vector3f(4,5,6) / Vector3f(4,5,6);
+    return cross( v, v + Vector3f(2,3,4) * Vector3f(4,5,6) - Vector3f(4,5,6) / Vector3f(4,5,6) );
 }
