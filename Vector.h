@@ -282,13 +282,46 @@ struct fixedDetail : detail<Data,Tag>
  * @note Direct member access - Maximum debug performance
  */
 template <typename Data, uint32_t Count, typename Tag>
-VectorT<Data,Count,Tag> operator + ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
+inline VectorT<Data,Count,Tag> operator + ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
 {
     VectorT<Data,Count,Tag> ret;
     for ( size_t i = 0U; i < Count; ++i )
-    {
         ret.vec[i] = lhs.vec[i] + rhs.vec[i];
-    }
+    return ret;
+}
+/**
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data, uint32_t Count, typename Tag>
+inline VectorT<Data,Count,Tag> operator - ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
+{
+    VectorT<Data,Count,Tag> ret;
+    for ( size_t i = 0U; i < Count; ++i )
+        ret.vec[i] = lhs.vec[i] - rhs.vec[i];
+    return ret;
+}
+
+/**
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data, uint32_t Count, typename Tag>
+inline VectorT<Data,Count,Tag> operator * ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
+{
+    VectorT<Data,Count,Tag> ret;
+    for ( size_t i = 0U; i < Count; ++i )
+        ret.vec[i] = lhs.vec[i] * rhs.vec[i];
+    return ret;
+}
+
+/**
+ * @note Direct member access - Maximum debug performance
+ */
+template <typename Data, uint32_t Count, typename Tag>
+VectorT<Data,Count,Tag> operator / ( const VectorT<Data,Count,Tag>& lhs, const VectorT<Data,Count,Tag>& rhs )
+{
+    VectorT<Data,Count,Tag> ret;
+    for ( size_t i = 0U; i < Count; ++i )
+        ret.vec[i] = lhs.vec[i] / rhs.vec[i];
     return ret;
 }
 
@@ -302,13 +335,12 @@ typedef VectorT<float,10U,DynamicTag> VectorX10f; ///< vec[1..10]
 typedef VectorT<float,3U,RgbTag> Rgb;
 typedef VectorT<float,3U,YuvTag> Yuv;
 
-#if 0
 static_assert( sizeof(Vector1f) == sizeof(float) * 1U, "Design error" );
 static_assert( sizeof(Vector2f) == sizeof(float) * 2U, "Design error" );
 static_assert( sizeof(Vector3f) == sizeof(float) * 3U, "Design error" );
 static_assert( sizeof(Vector10f) == sizeof(float) * 10U, "Design error" );
 static_assert( sizeof(VectorX10f) == sizeof(Vector10f) + sizeof(uint_fast16_t), "Design error" );
-#endif
+
 static_assert( Vector1f().size() == 1U, "Design error" );
 static_assert( Vector2f().size() == 2U, "Design error" );
 static_assert( Vector3f().size() == 3U, "Design error" );
@@ -327,6 +359,7 @@ Vector3f test()
     v.z = 3;
     v.vec[2] = v.size();
 
-
-    return v + Vector3f(2,3,4);
+    /// @note GCC 7.2 failes to optimise out the math at O3
+    /// clang  oes optimise all code using constants
+    return v + Vector3f(2,3,4) * Vector3f(4,5,6) - Vector3f(4,5,6) / Vector3f(4,5,6);
 }
